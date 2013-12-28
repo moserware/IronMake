@@ -6,9 +6,28 @@ using System.Text.RegularExpressions;
 
 namespace IronMake {
     public class MakefileParser {
-        private static readonly Regex _Comment = new Regex("#.+$", RegexOptions.Singleline);
-        private static readonly Regex _VariableDeclaration = new Regex(@"^\s*(?<name>[^=]+)\s*=\s*(?<value>[^:=]*)\s*$");
-        private static readonly Regex _RuleDeclaration = new Regex(@"^((\s+)|(?<target>[^:\s]+))+:(?!=)\s*((?<dependency>[^ ]+)|[ ])*$");
+        private static readonly Regex _Comment = new Regex("#.*$", RegexOptions.Singleline);
+        private static readonly Regex _VariableDeclaration = new Regex(@"^\s*            # Variables declarations must be the first thing on a line
+                                                                        (?<name>[^=]+)   # The name can be ANYTHING that isn't '=', which should allow lots of flexibility
+                                                                        \s*
+                                                                        =                # '=' separates declaration from value
+                                                                        \s*
+                                                                        (?<value>[^:=]*) # variable value
+                                                                        \s*$", 
+                                                                        RegexOptions.IgnorePatternWhitespace);
+
+        private static readonly Regex _RuleDeclaration = new Regex(@"^(
+                                                                        (\s+)                # A single rule can have multiple names since the recipe could generate multiple targets
+                                                                        |
+                                                                        (?<target>[^:\s]+)   
+                                                                      )+
+                                                                      :(?!=)                 # rules are separated by a ':' but it can't be := or else it'd look like a variable declaration
+                                                                      \s*
+                                                                      (
+                                                                        (?<dependency>[^ ]+) # dependency names are anything that doesn't have a space (to allow almost anything)
+                                                                        |
+                                                                        [ ]
+                                                                      )*$", RegexOptions.IgnorePatternWhitespace);
 
         public static Makefile Parse() {
             return Parse("Makefile");

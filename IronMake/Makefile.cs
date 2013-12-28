@@ -130,7 +130,12 @@ namespace IronMake {
     }
 
     public class VariableRepository {
-        private static readonly Regex _VariableUsage = new Regex(@"\$\(\s*(?<name>[^$\(\)]+)\)");
+        private static readonly Regex _VariableUsage = new Regex(@"\$                       # Starts ref as in $(VARNAME)
+                                                                    \(
+                                                                        \s*
+                                                                        (?<name>[^$\(\)]*)  # We don't allow inner ('s because of how we resolve things from most inside to out. This allows nesting
+                                                                    \)", 
+                                                                    RegexOptions.IgnorePatternWhitespace);
         private readonly Dictionary<string, string> _NameToValue = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase); 
 
         public void Add(string name, string value) {
