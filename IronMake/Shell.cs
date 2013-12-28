@@ -22,7 +22,9 @@ namespace IronMake {
         public string Execute(IEnumerable<string> commands) {
             var startInfo = new ProcessStartInfo(ShellPath.Replace("/", "\\")) {
                 UseShellExecute = false,
-                RedirectStandardOutput = RedirectStandardOutput
+                RedirectStandardOutput = RedirectStandardOutput,
+                ErrorDialog = false,
+                CreateNoWindow = true
             };
 
             var executionOutput = new StringBuilder();
@@ -55,7 +57,7 @@ namespace IronMake {
                         process.WaitForExit();
 
                         if (RedirectStandardOutput) {
-                            executionOutput.AppendLine(process.StandardOutput.ReadToEnd());
+                            executionOutput.Append(process.StandardOutput.ReadToEnd());
                         }
 
                         if (process.ExitCode != 0) {

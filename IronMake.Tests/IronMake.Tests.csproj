@@ -35,6 +35,9 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="nunit.framework">
+      <HintPath>..\packages\NUnit.2.6.3\lib\nunit.framework.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
   </ItemGroup>
   <Choose>
@@ -43,17 +46,21 @@
         <Reference Include="Microsoft.VisualStudio.QualityTools.UnitTestFramework, Version=10.1.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
       </ItemGroup>
     </When>
-    <Otherwise>
-      <ItemGroup>
-        <Reference Include="Microsoft.VisualStudio.QualityTools.UnitTestFramework" />
-      </ItemGroup>
-    </Otherwise>
+    <Otherwise />
   </Choose>
   <ItemGroup>
     <Compile Include="MakefileParserTests.cs" />
+    <None Include="Makefiles\CheckTimestamps_3.Expected" />
+    <None Include="Makefiles\CheckTimestamps_3.Makefile" />
+    <None Include="Makefiles\CheckTimestamps_2.Expected" />
+    <None Include="Makefiles\CheckTimestamps_2.Makefile" />
+    <None Include="Makefiles\CheckTimestamps_1.Makefile" />
+    <None Include="Makefiles\CheckTimestamps_1.Expected" />
     <None Include="Makefiles\TopologicalSort.Makefile" />
+    <Compile Include="MakefileTests.cs" />
     <Compile Include="ShellTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\IronMake\IronMake.csproj">
@@ -61,7 +68,6 @@
       <Name>IronMake</Name>
     </ProjectReference>
   </ItemGroup>
-  <ItemGroup />
   <ItemGroup>
     <None Include="Makefiles\TopologicalSort.Expected" />
   </ItemGroup>

@@ -2,14 +2,20 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Text.RegularExpressions;
 
 namespace IronMake {
     public class Makefile {
         public readonly IList<Rule> Rules = new List<Rule>();
         public readonly VariableRepository Variables = new VariableRepository();
+        private readonly Lazy<Shell> _Shell; 
 
-        public void Make(string target) {
+        public Makefile() {
+            _Shell = new Lazy<Shell>(() => new Shell(Variables.ResolveVariable("SHELL")));
+        }
+
+        public string Make(string target) {
             var targetToRule = new Dictionary<string, Rule>(StringComparer.OrdinalIgnoreCase);
             var executedRules = new HashSet<Rule>();
 
@@ -21,14 +27,26 @@ namespace IronMake {
                 }
             }
 
-            var shell = new Shell(Variables.ResolveVariable("SHELL"));
+            var topLevelOutput = Make(target, GetTargetLastWriteTime(target, targetToRule), targetToRule, executedRules, Shell);
+            if (topLevelOutput == null) {
+                var nothingToBeDone = String.Format("Nothing to be done for `{0}'", target);
 
-            if (!Make(target, GetTargetLastWriteTime(target, targetToRule), targetToRule, executedRules, shell)) {
-                Console.WriteLine("Nothing to be done for `{0}'", target);
+                if (Shell.RedirectStandardOutput) {
+                    return nothingToBeDone;
+                }
+                else {
+                    Console.WriteLine(nothingToBeDone);
+                }
             }
+
+            return topLevelOutput;
         }
 
-        private bool Make(string target, DateTime? parentLastWriteTime, Dictionary<string, Rule> targetToRule, HashSet<Rule> executedRules, Shell shell) {
+        public Shell Shell {
+            get { return _Shell.Value; }
+        }
+
+        private string Make(string target, DateTime? parentLastWriteTime, Dictionary<string, Rule> targetToRule, HashSet<Rule> executedRules, Shell shell) {
             Rule currentRule;
             if (!targetToRule.TryGetValue(target, out currentRule)) {
                 throw new Exception(String.Format("Don't know how to make '{0}'", target));
@@ -36,7 +54,7 @@ namespace IronMake {
 
             if (executedRules.Contains(currentRule)) {
                 // Don't do it again!
-                return false;
+                return null;
             }
 
             if (!executedRules.Contains(currentRule)) {
@@ -48,8 +66,15 @@ namespace IronMake {
 
             var dependencyWasMade = false;
 
+            var output = new StringBuilder();
+
             foreach (var currentDependency in currentRule.Dependencies) {
-                dependencyWasMade |= Make(currentDependency, targetLastWrite, targetToRule, executedRules, shell);
+                var currentDependencyOutput = Make(currentDependency, targetLastWrite, targetToRule, executedRules, shell);
+                var currentDependencyWasMade = currentDependencyOutput != null;
+                dependencyWasMade |= currentDependencyWasMade;
+                if (currentDependencyWasMade) {
+                    output.Append(currentDependencyOutput);
+                }
             }
 
             if (!dependencyWasMade) {
@@ -57,23 +82,27 @@ namespace IronMake {
                     if (parentLastWriteTime != null) {
                         if (targetLastWrite.Value <= parentLastWriteTime.Value) {
                             // dependency is older than target, which means we shouldn't have to bother redoing it
-                            return false;
+                            return null;
                         }
                     }
                     else {
                         // If the parent doesn't exist, but we exist (as a dependency), then the existing version is fine
                         // and we don't have to recreate it.
-                        return false;
+                        return null;
                     }
                 }
             }
 
             if (currentRule.Recipe.Any()) {
-                shell.Execute(currentRule.Recipe);
-                return true;
+                var currentRecipeOutput = shell.Execute(currentRule.Recipe);
+                if (currentRecipeOutput != null) {
+                    output.Append(currentRecipeOutput);
+                }
+
+                return output.ToString();
             }
 
-            return dependencyWasMade;
+            return dependencyWasMade ? output.ToString() : null;
         }
 
         // "Phony" means to ignore an identically named file (e.g. to still make "all" even if there is a file called "all")

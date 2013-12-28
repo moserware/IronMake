@@ -1,9 +1,9 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿using NUnit.Framework;
 
 namespace IronMake.Tests {
-    [TestClass]
+    [TestFixture]
     public class ShellTests {
-        [TestMethod]
+        [Test]
         public void ExecuteTest() {
             var shell = new Shell {
                 RedirectStandardOutput = true
