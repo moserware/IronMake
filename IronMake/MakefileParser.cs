@@ -34,6 +34,9 @@ namespace IronMake {
         }
 
         public static Makefile Parse(string path) {
+            if (!File.Exists(path)) {
+                throw new FileNotFoundException(String.Format("{0} not found", Path.GetFileName(path)), path);
+            }
             return Parse(File.ReadLines(path));
         }
         
